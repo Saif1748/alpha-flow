@@ -1,30 +1,43 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useTrading } from "@/contexts/TradingContext";
+import { useEffect, useState } from "react";
 
-const mockChartData = [
-  { time: "9:30", value: 100000 },
-  { time: "10:00", value: 100500 },
-  { time: "10:30", value: 100200 },
-  { time: "11:00", value: 101000 },
-  { time: "11:30", value: 100800 },
-  { time: "12:00", value: 101500 },
-  { time: "12:30", value: 102000 },
-  { time: "13:00", value: 101800 },
-  { time: "13:30", value: 102500 },
-  { time: "14:00", value: 103000 },
-];
+const generateChartData = (currentValue: number) => {
+  const data = [];
+  const startValue = currentValue * 0.97;
+  for (let i = 0; i < 10; i++) {
+    const variance = (Math.random() - 0.5) * currentValue * 0.02;
+    const value = startValue + (currentValue - startValue) * (i / 9) + variance;
+    data.push({
+      time: `${9 + Math.floor(i * 0.6)}:${(i * 6) % 60}`,
+      value: parseFloat(value.toFixed(2)),
+    });
+  }
+  return data;
+};
 
-const PortfolioOverview = () => {
-  const portfolioValue = 103000;
-  const dayChange = 3000;
-  const dayChangePercent = 3.0;
-  const isPositive = dayChange >= 0;
+interface PortfolioOverviewProps {
+  onTrade: () => void;
+}
+
+const PortfolioOverview = ({ onTrade }: PortfolioOverviewProps) => {
+  const { portfolioValue, totalPL, cashBalance, positions } = useTrading();
+  const [chartData, setChartData] = useState(generateChartData(portfolioValue));
+
+  const dayChangePercent = (totalPL / 100000) * 100;
+  const isPositive = totalPL >= 0;
+  const invested = positions.reduce((sum, pos) => sum + pos.currentPrice * pos.shares, 0);
+
+  useEffect(() => {
+    setChartData(generateChartData(portfolioValue));
+  }, [portfolioValue]);
 
   return (
     <Card className="p-6 border-border bg-card">
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-start justify-between">
           <div>
             <p className="text-sm text-muted-foreground mb-1">Total Portfolio Value</p>
@@ -38,17 +51,19 @@ const PortfolioOverview = () => {
                 <TrendingDown className="h-4 w-4 text-destructive" />
               )}
               <span className={isPositive ? "text-success" : "text-destructive"}>
-                ${Math.abs(dayChange).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({Math.abs(dayChangePercent).toFixed(2)}%)
+                {isPositive ? "+" : ""}${Math.abs(totalPL).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({isPositive ? "+" : ""}{dayChangePercent.toFixed(2)}%)
               </span>
-              <span className="text-muted-foreground text-sm">Today</span>
+              <span className="text-muted-foreground text-sm">Total P&L</span>
             </div>
           </div>
+          <Button onClick={onTrade} className="bg-primary hover:bg-primary/90">
+            New Trade
+          </Button>
         </div>
 
-        {/* Chart */}
         <div className="h-32">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={mockChartData}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="portfolioGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -74,23 +89,28 @@ const PortfolioOverview = () => {
           </ResponsiveContainer>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border">
           <div>
             <p className="text-xs text-muted-foreground mb-1">Cash Balance</p>
-            <p className="text-lg font-semibold text-foreground">$95,000.00</p>
+            <p className="text-lg font-semibold text-foreground">
+              ${cashBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Invested</p>
-            <p className="text-lg font-semibold text-foreground">$8,000.00</p>
+            <p className="text-lg font-semibold text-foreground">
+              ${invested.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
-            <p className="text-lg font-semibold text-success">+$3,000.00</p>
+            <p className={`text-lg font-semibold ${isPositive ? "text-success" : "text-destructive"}`}>
+              {isPositive ? "+" : ""}${Math.abs(totalPL).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Open Positions</p>
-            <p className="text-lg font-semibold text-foreground">5</p>
+            <p className="text-lg font-semibold text-foreground">{positions.length}</p>
           </div>
         </div>
       </div>

@@ -1,25 +1,24 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowUpRight, ArrowDownRight } from "lucide-react";
-
-interface Transaction {
-  id: string;
-  ticker: string;
-  type: "buy" | "sell";
-  shares: number;
-  price: number;
-  timestamp: string;
-}
-
-const mockTransactions: Transaction[] = [
-  { id: "1", ticker: "AAPL", type: "buy", shares: 10, price: 150.00, timestamp: "2024-01-15 09:30" },
-  { id: "2", ticker: "TSLA", type: "buy", shares: 5, price: 200.00, timestamp: "2024-01-15 10:15" },
-  { id: "3", ticker: "BTC", type: "buy", shares: 0.1, price: 40000.00, timestamp: "2024-01-15 11:00" },
-  { id: "4", ticker: "GOOGL", type: "buy", shares: 8, price: 130.00, timestamp: "2024-01-15 13:20" },
-  { id: "5", ticker: "ETH", type: "buy", shares: 2, price: 2000.00, timestamp: "2024-01-15 14:45" },
-];
+import { useTrading } from "@/contexts/TradingContext";
 
 const TransactionHistory = () => {
+  const { transactions } = useTrading();
+
+  if (transactions.length === 0) {
+    return (
+      <Card className="p-6 border-border bg-card">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-foreground">Recent Transactions</h3>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No transactions yet. Your trade history will appear here.</p>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-6 border-border bg-card">
       <div className="flex items-center justify-between mb-6">
@@ -27,7 +26,7 @@ const TransactionHistory = () => {
       </div>
 
       <div className="space-y-3">
-        {mockTransactions.map((transaction) => (
+        {transactions.slice(0, 10).map((transaction) => (
           <div
             key={transaction.id}
             className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border"

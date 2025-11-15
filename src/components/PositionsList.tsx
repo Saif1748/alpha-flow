@@ -1,34 +1,27 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, TrendingDown } from "lucide-react";
-
-interface Position {
-  ticker: string;
-  name: string;
-  shares: number;
-  avgPrice: number;
-  currentPrice: number;
-  type: "stock" | "crypto";
-}
-
-const mockPositions: Position[] = [
-  { ticker: "AAPL", name: "Apple Inc.", shares: 10, avgPrice: 150.00, currentPrice: 165.00, type: "stock" },
-  { ticker: "TSLA", name: "Tesla Inc.", shares: 5, avgPrice: 200.00, currentPrice: 220.00, type: "stock" },
-  { ticker: "BTC", name: "Bitcoin", shares: 0.1, avgPrice: 40000.00, currentPrice: 45000.00, type: "crypto" },
-  { ticker: "GOOGL", name: "Alphabet Inc.", shares: 8, avgPrice: 130.00, currentPrice: 125.00, type: "stock" },
-  { ticker: "ETH", name: "Ethereum", shares: 2, avgPrice: 2000.00, currentPrice: 2200.00, type: "crypto" },
-];
+import { useTrading } from "@/contexts/TradingContext";
 
 interface PositionsListProps {
   onTrade: (ticker: string) => void;
 }
 
 const PositionsList = ({ onTrade }: PositionsListProps) => {
-  const calculatePL = (position: Position) => {
-    const pl = (position.currentPrice - position.avgPrice) * position.shares;
-    const plPercent = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
-    return { pl, plPercent };
-  };
+  const { positions } = useTrading();
+
+  if (positions.length === 0) {
+    return (
+      <Card className="p-6 border-border bg-card">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-foreground">Open Positions</h3>
+        </div>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No open positions yet. Start trading to see your positions here.</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6 border-border bg-card">
@@ -37,8 +30,9 @@ const PositionsList = ({ onTrade }: PositionsListProps) => {
       </div>
 
       <div className="space-y-3">
-        {mockPositions.map((position) => {
-          const { pl, plPercent } = calculatePL(position);
+        {positions.map((position) => {
+          const pl = (position.currentPrice - position.avgPrice) * position.shares;
+          const plPercent = ((position.currentPrice - position.avgPrice) / position.avgPrice) * 100;
           const isPositive = pl >= 0;
 
           return (
